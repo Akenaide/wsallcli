@@ -1,8 +1,13 @@
 package internal
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/url"
+	"os"
+	"path/filepath"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -63,6 +68,26 @@ func (card *Card) LogCard() {
 		"cardcode", card.Cardcode,
 		"imageURL", card.ImageURL,
 	)
+}
+
+func (c *Card) SaveCardOnDisk() {
+
+	res, errMarshal := json.Marshal(c)
+	if errMarshal != nil {
+		slog.Error("error marshal", errMarshal)
+	}
+	var buffer bytes.Buffer
+	cardName := fmt.Sprintf("%v-%v%v-%v.json", c.Set, c.Side, c.Release, c.ID)
+	dirName := filepath.Join(c.Set, fmt.Sprintf("%v%v", c.Side, c.Release))
+	os.MkdirAll(dirName, 0o744)
+	out, err := os.Create(filepath.Join(dirName, cardName))
+	defer out.Close()
+	if err != nil {
+		slog.Error("write error", err.Error())
+	}
+	json.Indent(&buffer, res, "", "\t")
+	buffer.WriteTo(out)
+	slog.Info("Finish card- : ", cardName)
 }
 
 type GameConfig struct {

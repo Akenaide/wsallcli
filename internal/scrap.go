@@ -3,6 +3,7 @@ package internal
 import (
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -26,14 +27,33 @@ func (gc *GameConfig) isTrullyNotFoil(card Card) bool {
 	return true
 }
 
-func Fetch(gc *GameConfig) {
-	mainHTML := gc.GetDocument(6)
+func scrapeCardsPage(gc *GameConfig, page_num int) (bool, error) {
+	mainHTML := gc.GetDocument(page_num)
 	cards := gc.LoopCards(&mainHTML)
 	if cards.Length() == 0 {
 		slog.Warn("no cards found")
+		return true, nil
 	}
 	cards.Each(func(i int, s *goquery.Selection) {
-		gc.ExtractData(gc, s)
+		card := gc.ExtractData(gc, s)
+		card.SaveCardOnDisk()
 	})
 
+	return false, nil
+
+}
+
+func ScrapeAllCards(config *GameConfig) {
+	page := 1
+	for {
+		finished, err := scrapeCardsPage(config, page)
+		if err != nil {
+			slog.Error("scrape err", err)
+		}
+		if finished {
+			break
+		}
+		page++
+		time.Sleep(500 * time.Millisecond)
+	}
 }
