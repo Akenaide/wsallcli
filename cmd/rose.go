@@ -139,7 +139,7 @@ func roseExtractData(gc *internal.GameConfig, mainHTML *goquery.Selection) inter
 func getDocument(page_num int) goquery.Document {
 
 	url := fmt.Sprint("https://ws-rose.com/cardlist/cardsearch_ex?page=", page_num)
-	slog.Info("url", url)
+	slog.Info("url", "url", url)
 	// Create the request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -152,13 +152,13 @@ func getDocument(page_num int) goquery.Document {
 	}
 	response, err := client.Do(req)
 	if err != nil {
-		slog.Warn("Error", err)
+		slog.Warn("Error", "err", err)
 	}
 	defer response.Body.Close()
 	mainHTML, err := goquery.NewDocumentFromReader(response.Body)
 	fmt.Println(response.Header)
 	if err != nil {
-		slog.Warn("err get mainHTML", err)
+		slog.Warn("err get mainHTML", "err", err)
 	}
 
 	return *mainHTML

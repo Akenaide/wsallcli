@@ -1,7 +1,10 @@
 package internal
 
 import (
+	"bytes"
+	"encoding/json"
 	"log/slog"
+	"os"
 	"strings"
 	"time"
 
@@ -41,6 +44,77 @@ func scrapeCardsPage(gc *GameConfig, page_num int) (bool, error) {
 
 	return false, nil
 
+}
+
+func ScrapeProducts(config *ProductsConfig, maxPages int) {
+	var products []Product
+	var missing []Product
+	now := time.Now()
+
+	for page := 1; ; page++ {
+		if maxPages > 0 && page > maxPages {
+			break
+		}
+
+		slog.Info("fetching listing page", "page", page)
+		doc := config.GetListingPage(page)
+		time.Sleep(500 * time.Millisecond)
+
+		items := config.LoopProducts(&doc)
+		if items.Length() == 0 {
+			slog.Info("no more products found, stopping", "page", page)
+			break
+		}
+		slog.Info("found products on page", "page", page, "count", items.Length())
+
+		items.Each(func(_ int, s *goquery.Selection) {
+			title, imageURL, releaseDateStr, detailURL := config.ExtractListing(s)
+			if releaseDateStr == "" {
+				return
+			}
+			releaseDate, err := time.Parse("2006/01/02", releaseDateStr)
+			if err != nil || releaseDate.After(now) {
+				slog.Info("skipping unreleased product", "title", title, "releaseDate", releaseDateStr)
+				return
+			}
+
+			slog.Info("fetching product detail", "title", title, "url", detailURL)
+			detailDoc := config.GetDetailPage(detailURL)
+			time.Sleep(500 * time.Millisecond)
+
+			licenceCode, setCode := config.ExtractDetail(&detailDoc)
+			if setCode == "" && config.GetSetCodeFallback != nil {
+				slog.Info("image setcode not found, trying cardlist fallback", "title", title, "licenceCode", licenceCode)
+				setCode = config.GetSetCodeFallback(licenceCode)
+				time.Sleep(500 * time.Millisecond)
+			}
+			slog.Info("scraped product", "title", title, "licenceCode", licenceCode, "setCode", setCode)
+			p := Product{
+				ReleaseDate: releaseDateStr,
+				Title:       title,
+				LicenceCode: licenceCode,
+				Image:       imageURL,
+				SetCode:     setCode,
+			}
+			products = append(products, p)
+			if setCode == "" {
+				missing = append(missing, p)
+			}
+		})
+	}
+
+	res, _ := json.Marshal(products)
+	var buf bytes.Buffer
+	json.Indent(&buf, res, "", "\t")
+	os.WriteFile("products.json", buf.Bytes(), 0o644)
+	slog.Info("wrote products to products.json", "count", len(products))
+
+	if len(missing) > 0 {
+		slog.Warn("Products with missing SetCode — investigate manually:")
+		for _, p := range missing {
+			slog.Warn("  missing SetCode", "title", p.Title, "licenceCode", p.LicenceCode)
+		}
+	}
 }
 
 func ScrapeAllCards(config *GameConfig) {

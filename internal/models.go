@@ -100,3 +100,20 @@ type GameConfig struct {
 	LoopCards   func(*goquery.Document) goquery.Selection
 	GetDocument func(page_num int) goquery.Document
 }
+
+type Product struct {
+	ReleaseDate string `json:"ReleaseDate"`
+	Title       string `json:"Title"`
+	LicenceCode string `json:"LicenceCode"`
+	Image       string `json:"Image"`
+	SetCode     string `json:"SetCode"`
+}
+
+type ProductsConfig struct {
+	GetListingPage     func(pageNum int) goquery.Document
+	GetDetailPage      func(url string) goquery.Document
+	LoopProducts       func(*goquery.Document) goquery.Selection
+	ExtractListing     func(*goquery.Selection) (title, imageURL, releaseDate, detailURL string)
+	ExtractDetail      func(*goquery.Document) (licenceCode, setCode string)
+	GetSetCodeFallback func(licenceCode string) string // optional; nil if unsupported
+}
