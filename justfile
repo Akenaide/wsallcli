@@ -18,3 +18,6 @@ docker-build:
 
 docker-run: docker-build
     docker run -v $(pwd)/data:/data wsallcli rose
+
+completions: build
+    ./wsallcli completion fish > ~/.config/fish/completions/wsallcli.fish
