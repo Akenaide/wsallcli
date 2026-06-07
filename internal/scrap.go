@@ -118,17 +118,50 @@ func ScrapeProducts(config *ProductsConfig, maxPages int) {
 	}
 }
 
-func ScrapeAllCards(config *GameConfig) {
-	page := 1
-	for {
+// ScrapeAllCards fetches cards across pages [startPage, endPage].
+// endPage=0 means fetch all pages. When config.FetchPage is set the JSON
+// path is used; otherwise the HTML path (GetDocument/LoopCards/ExtractData).
+func ScrapeAllCards(config *GameConfig, startPage, endPage int) {
+	if config.FetchPage != nil {
+		scrapeAllCardsJSON(config, startPage, endPage)
+		return
+	}
+	for page := startPage; ; page++ {
+		if endPage > 0 && page > endPage {
+			break
+		}
 		finished, err := scrapeCardsPage(config, page)
 		if err != nil {
-			slog.Error("scrape err", err)
+			slog.Error("scrape err", "err", err)
 		}
 		if finished {
 			break
 		}
-		page++
+		time.Sleep(500 * time.Millisecond)
+	}
+}
+
+func scrapeAllCardsJSON(config *GameConfig, startPage, endPage int) {
+	for page := startPage; ; page++ {
+		if endPage > 0 && page > endPage {
+			break
+		}
+		slog.Info("fetching page", "page", page)
+		cards, totalPages, err := config.FetchPage(config, page)
+		if err != nil {
+			slog.Error("fetch page error", "page", page, "err", err)
+			break
+		}
+		if len(cards) == 0 {
+			slog.Info("no cards returned, stopping", "page", page)
+			break
+		}
+		for i := range cards {
+			cards[i].SaveCardOnDisk()
+		}
+		if page >= totalPages {
+			break
+		}
 		time.Sleep(500 * time.Millisecond)
 	}
 }

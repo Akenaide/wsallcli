@@ -100,7 +100,7 @@ func roseExtractData(gc *internal.GameConfig, mainHTML *goquery.Selection) inter
 	// Extract special attributes (特徴)
 	var specialAttrib []string
 	specialAttrText := strings.TrimSpace(mainHTML.Find(".dl-Item:has(dt span:contains('特徴')) dd p").Text())
-	slog.Info(specialAttrText)
+	slog.Info("special attribute", "text", specialAttrText)
 	if specialAttrText != "" && specialAttrText != "-" {
 		specialAttrib = strings.Split(specialAttrText, "・") // Split by Japanese middle dot
 	}
@@ -210,7 +210,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("rose called")
-		internal.ScrapeAllCards(&RoseConfig)
+		internal.ScrapeAllCards(&RoseConfig, 1, 0)
 	},
 }
 

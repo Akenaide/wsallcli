@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	CardModelVersion string = "3"
+	CardModelVersion string = "4"
 )
 
 // Card info to export
@@ -42,6 +42,7 @@ type Card struct {
 	Cardcode          string   `json:"cardcode"`
 	ImageURL          string   `json:"imageURL"`
 	Tags              []string `json:"tags"`
+	ExpansionID       int      `json:"expansionId,omitempty"`
 }
 
 func (card *Card) LogCard() {
@@ -74,7 +75,7 @@ func (c *Card) SaveCardOnDisk() {
 
 	res, errMarshal := json.Marshal(c)
 	if errMarshal != nil {
-		slog.Error("error marshal", errMarshal)
+		slog.Error("error marshal", "err", errMarshal)
 	}
 	var buffer bytes.Buffer
 	cardName := fmt.Sprintf("%v-%v%v-%v.json", c.Set, c.Side, c.Release, c.ID)
@@ -83,11 +84,11 @@ func (c *Card) SaveCardOnDisk() {
 	out, err := os.Create(filepath.Join(dirName, cardName))
 	defer out.Close()
 	if err != nil {
-		slog.Error("write error", err.Error())
+		slog.Error("write error", "err", err)
 	}
 	json.Indent(&buffer, res, "", "\t")
 	buffer.WriteTo(out)
-	slog.Info("Finish card- : ", cardName)
+	slog.Info("saved card", "file", cardName)
 }
 
 type GameConfig struct {
@@ -99,6 +100,9 @@ type GameConfig struct {
 	URLValue    url.Values
 	LoopCards   func(*goquery.Document) goquery.Selection
 	GetDocument func(page_num int) goquery.Document
+	// FetchPage is an optional JSON-based alternative to GetDocument/LoopCards/ExtractData.
+	// When set, ScrapeAllCards uses this path instead of the HTML path.
+	FetchPage func(gc *GameConfig, page int) (cards []Card, totalPages int, err error)
 }
 
 type Product struct {
