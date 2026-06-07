@@ -61,12 +61,13 @@ func classicProductsLoop(doc *goquery.Document) goquery.Selection {
 	return *doc.Find("ul.products__lists a.products__link")
 }
 
-func classicExtractListing(sel *goquery.Selection) (title, imageURL, releaseDate, detailURL string) {
+func classicExtractListing(sel *goquery.Selection) (title, imageURL, releaseDate, detailURL, productType string) {
 	detailURL, _ = sel.Attr("href")
 	imageURL, _ = sel.Find(".products__thumbImg img").Attr("src")
 	title = strings.TrimSpace(sel.Find("p.products__name").Text())
 	rawDate := sel.Find("p.products__salesdate").Text()
 	releaseDate = parseJaReleaseDate(rawDate)
+	productType = strings.TrimSpace(sel.Find(".products__catItem").First().Text())
 	return
 }
 

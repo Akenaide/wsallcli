@@ -48,7 +48,7 @@ func TestProductsLoop_ReturnsMainListItems(t *testing.T) {
 func TestExtractListing_Title(t *testing.T) {
 	sel := firstListingProduct(t)
 
-	title, _, _, _ := classicExtractListing(sel)
+	title, _, _, _, _ := classicExtractListing(sel)
 
 	if strings.TrimSpace(title) == "" {
 		t.Error("expected non-empty title")
@@ -62,7 +62,7 @@ func TestExtractListing_Title(t *testing.T) {
 func TestExtractListing_ImageURL(t *testing.T) {
 	sel := firstListingProduct(t)
 
-	_, imageURL, _, _ := classicExtractListing(sel)
+	_, imageURL, _, _, _ := classicExtractListing(sel)
 
 	if !strings.HasPrefix(imageURL, "https://") {
 		t.Errorf("expected full https image URL, got %q", imageURL)
@@ -73,7 +73,7 @@ func TestExtractListing_ImageURL(t *testing.T) {
 func TestExtractListing_DetailURL(t *testing.T) {
 	sel := firstListingProduct(t)
 
-	_, _, _, detailURL := classicExtractListing(sel)
+	_, _, _, detailURL, _ := classicExtractListing(sel)
 
 	if detailURL != "https://ws-tcg.com/products/sfn_bp_vol2/" {
 		t.Errorf("expected sfn_bp_vol2 URL, got %q", detailURL)
@@ -130,6 +130,17 @@ func TestParseSetCodeFromCardListJSON_BoosterCard(t *testing.T) {
 	// Then
 	if setCode != "S129" {
 		t.Errorf("expected 'S129', got %q", setCode)
+	}
+}
+
+// Given a product selection, When extracting listing, Then ProductType matches expected
+func TestExtractListing_ProductType(t *testing.T) {
+	sel := firstListingProduct(t)
+
+	_, _, _, _, productType := classicExtractListing(sel)
+
+	if productType != "ブースターパック" {
+		t.Errorf("expected 'ブースターパック', got %q", productType)
 	}
 }
 

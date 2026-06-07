@@ -68,7 +68,7 @@ func ScrapeProducts(config *ProductsConfig, maxPages int) {
 		slog.Info("found products on page", "page", page, "count", items.Length())
 
 		items.Each(func(_ int, s *goquery.Selection) {
-			title, imageURL, releaseDateStr, detailURL := config.ExtractListing(s)
+			title, imageURL, releaseDateStr, detailURL, productType := config.ExtractListing(s)
 			if releaseDateStr == "" {
 				return
 			}
@@ -95,6 +95,7 @@ func ScrapeProducts(config *ProductsConfig, maxPages int) {
 				LicenceCode: licenceCode,
 				Image:       imageURL,
 				SetCode:     setCode,
+				ProductType: productType,
 			}
 			products = append(products, p)
 			if setCode == "" {
