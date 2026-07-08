@@ -178,6 +178,20 @@ func enrichProductsFull(products []internal.Product, titleIndex map[string][]set
 	}
 }
 
+// applyTitleNames fills Product.TitleName from a licenceCode -> title_number index (see fetchTitleNumberIndex).
+func applyTitleNames(products []internal.Product, titleNumberIndex map[string]string) {
+	for i := range products {
+		p := &products[i]
+		if p.TitleName != "" || p.LicenceCode == "" {
+			continue
+		}
+		if titleName, ok := titleNumberIndex[p.LicenceCode]; ok {
+			p.TitleName = titleName
+			slog.Info("filled TitleName", "title", p.Title, "licenceCode", p.LicenceCode, "titleName", titleName)
+		}
+	}
+}
+
 var enrichCmd = &cobra.Command{
 	Use:   "enrich <wsoffdata-path>",
 	Short: "Patch missing SetCode in products.json using a local wsoffdata clone",
@@ -204,6 +218,13 @@ var enrichCmd = &cobra.Command{
 		slog.Info("built index", "sets", len(titleIndex))
 
 		enrichProductsFull(products, titleIndex, licenceIndex)
+
+		titleNumberIndex, err := fetchTitleNumberIndex()
+		if err != nil {
+			slog.Warn("could not fetch title number index, TitleName will not be enriched", "err", err)
+		} else {
+			applyTitleNames(products, titleNumberIndex)
+		}
 
 		res, _ := json.Marshal(products)
 		var buf bytes.Buffer

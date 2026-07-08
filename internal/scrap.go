@@ -88,7 +88,11 @@ func ScrapeProducts(config *ProductsConfig, maxPages int) {
 				setCode = config.GetSetCodeFallback(licenceCode)
 				time.Sleep(500 * time.Millisecond)
 			}
-			slog.Info("scraped product", "title", title, "licenceCode", licenceCode, "setCode", setCode)
+			var titleName string
+			if config.GetTitleName != nil {
+				titleName = config.GetTitleName(licenceCode)
+			}
+			slog.Info("scraped product", "title", title, "licenceCode", licenceCode, "setCode", setCode, "titleName", titleName)
 			p := Product{
 				ReleaseDate: releaseDateStr,
 				Title:       title,
@@ -96,6 +100,7 @@ func ScrapeProducts(config *ProductsConfig, maxPages int) {
 				Image:       imageURL,
 				SetCode:     setCode,
 				ProductType: productType,
+				TitleName:   titleName,
 			}
 			products = append(products, p)
 			if setCode == "" {

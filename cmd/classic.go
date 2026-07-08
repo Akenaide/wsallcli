@@ -52,8 +52,38 @@ type filterOptionsExpansion struct {
 	Name string `json:"name"`
 }
 
+type filterOptionsSide struct {
+	ID          int    `json:"id"`
+	TitleNumber string `json:"title_number"`
+}
+
 type filterOptionsResponse struct {
 	Expansions []filterOptionsExpansion `json:"expansions"`
+	Sides      []filterOptionsSide      `json:"sides"`
+}
+
+// buildTitleNumberIndex maps each licence code packed into a side's
+// title_number (e.g. "##AB##KW##") back to that full title_number string.
+func buildTitleNumberIndex(sides []filterOptionsSide) map[string]string {
+	index := make(map[string]string)
+	for _, s := range sides {
+		for _, code := range strings.Split(s.TitleNumber, "##") {
+			if code == "" {
+				continue
+			}
+			index[code] = s.TitleNumber
+		}
+	}
+	return index
+}
+
+// fetchTitleNumberIndex fetches filter-options and builds a licenceCode -> title_number index.
+func fetchTitleNumberIndex() (map[string]string, error) {
+	opts, err := fetchFilterOptions()
+	if err != nil {
+		return nil, err
+	}
+	return buildTitleNumberIndex(opts.Sides), nil
 }
 
 // parseCardNumber parses "DC/W01-001" into set, side, release, id.
@@ -221,18 +251,25 @@ func classicRequest(url string) (*http.Response, error) {
 	return client.Do(req)
 }
 
-func fetchExpansionMap() (map[int]string, error) {
+func fetchFilterOptions() (filterOptionsResponse, error) {
 	resp, err := classicRequest(classicOptionsURL)
 	if err != nil {
-		return nil, fmt.Errorf("filter-options fetch: %w", err)
+		return filterOptionsResponse{}, fmt.Errorf("filter-options fetch: %w", err)
 	}
 	defer resp.Body.Close()
 
 	var opts filterOptionsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&opts); err != nil {
-		return nil, fmt.Errorf("filter-options decode: %w", err)
+		return filterOptionsResponse{}, fmt.Errorf("filter-options decode: %w", err)
 	}
+	return opts, nil
+}
 
+func fetchExpansionMap() (map[int]string, error) {
+	opts, err := fetchFilterOptions()
+	if err != nil {
+		return nil, err
+	}
 	m := make(map[int]string, len(opts.Expansions))
 	for _, e := range opts.Expansions {
 		m[e.ID] = e.Name
@@ -241,7 +278,7 @@ func fetchExpansionMap() (map[int]string, error) {
 }
 
 func classicFetchPage(gc *internal.GameConfig, page int) ([]internal.Card, int, error) {
-	if page == 1 {
+	if classicExpansionMap == nil {
 		m, err := fetchExpansionMap()
 		if err != nil {
 			slog.Warn("could not fetch expansion map, SetName will be empty", "err", err)

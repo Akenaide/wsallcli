@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"strings"
@@ -160,6 +161,22 @@ func classicGetSetCodeFallback(licenceCode string) string {
 	return classicParseSetCodeFromCardListJSON(lastBody, licenceCode)
 }
 
+var classicTitleNumberIndex map[string]string
+
+func classicGetTitleName(licenceCode string) string {
+	if classicTitleNumberIndex == nil {
+		index, err := fetchTitleNumberIndex()
+		if err != nil {
+			slog.Warn("could not fetch title number index, TitleName will be empty", "err", err)
+			classicTitleNumberIndex = map[string]string{}
+		} else {
+			classicTitleNumberIndex = index
+			slog.Info("loaded title number index", "count", len(index))
+		}
+	}
+	return classicTitleNumberIndex[licenceCode]
+}
+
 var ClassicProductsConfig = internal.ProductsConfig{
 	GetListingPage:     classicProductsGetListingPage,
 	GetDetailPage:      classicProductsGetDetailPage,
@@ -167,6 +184,7 @@ var ClassicProductsConfig = internal.ProductsConfig{
 	ExtractListing:     classicExtractListing,
 	ExtractDetail:      classicExtractDetail,
 	GetSetCodeFallback: classicGetSetCodeFallback,
+	GetTitleName:       classicGetTitleName,
 }
 
 var productsMaxPages int
