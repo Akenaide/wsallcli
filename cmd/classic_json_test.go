@@ -20,6 +20,24 @@ var testTriggerMap = map[string]string{
 	"chance":    "CHANCE",
 }
 
+// buildTitleNumberIndex
+
+func TestBuildTitleNumberIndex_mapsEachCodeToFullTitleNumber(t *testing.T) {
+	// Given a side whose title_number packs several licence codes together
+	// When buildTitleNumberIndex is called
+	// Then each code maps to the full title_number string
+	sides := []filterOptionsSide{
+		{ID: 11, TitleNumber: "##AB##KW##"},
+	}
+	index := buildTitleNumberIndex(sides)
+	if index["AB"] != "##AB##KW##" {
+		t.Errorf("expected index[\"AB\"] = \"##AB##KW##\", got %q", index["AB"])
+	}
+	if index["KW"] != "##AB##KW##" {
+		t.Errorf("expected index[\"KW\"] = \"##AB##KW##\", got %q", index["KW"])
+	}
+}
+
 // parseCardNumber
 
 func TestParseCardNumber_standard(t *testing.T) {

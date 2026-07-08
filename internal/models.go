@@ -112,6 +112,7 @@ type Product struct {
 	Image       string `json:"Image"`
 	SetCode     string `json:"SetCode"`
 	ProductType string `json:"productType"`
+	TitleName   string `json:"TitleName"`
 }
 
 type ProductsConfig struct {
@@ -121,4 +122,5 @@ type ProductsConfig struct {
 	ExtractListing     func(*goquery.Selection) (title, imageURL, releaseDate, detailURL, productType string)
 	ExtractDetail      func(*goquery.Document) (licenceCode, setCode string)
 	GetSetCodeFallback func(licenceCode string) string // optional; nil if unsupported
+	GetTitleName       func(licenceCode string) string // optional; nil if unsupported
 }

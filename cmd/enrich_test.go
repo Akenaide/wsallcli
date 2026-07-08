@@ -216,6 +216,48 @@ func TestEnrichProducts_BoosterPackExcludesExtraSets(t *testing.T) {
 	}
 }
 
+// Given a product with a LicenceCode and a matching title number index entry, When applying title names, Then TitleName is filled
+func TestApplyTitleNames_FillsMatchingLicenceCode(t *testing.T) {
+	index := map[string]string{"NIK": "##NIK##"}
+	products := []internal.Product{
+		{Title: "勝利の女神：NIKKE Vol.2", LicenceCode: "NIK", TitleName: ""},
+	}
+
+	applyTitleNames(products, index)
+
+	if products[0].TitleName != "##NIK##" {
+		t.Errorf("expected TitleName '##NIK##', got %q", products[0].TitleName)
+	}
+}
+
+// Given a product that already has a TitleName, When applying title names, Then it is not overwritten
+func TestApplyTitleNames_DoesNotOverwriteExisting(t *testing.T) {
+	index := map[string]string{"NIK": "##NIK##"}
+	products := []internal.Product{
+		{Title: "勝利の女神：NIKKE Vol.2", LicenceCode: "NIK", TitleName: "##OTHER##"},
+	}
+
+	applyTitleNames(products, index)
+
+	if products[0].TitleName != "##OTHER##" {
+		t.Errorf("expected TitleName to remain '##OTHER##', got %q", products[0].TitleName)
+	}
+}
+
+// Given a product whose LicenceCode has no match in the index, When applying title names, Then TitleName stays empty
+func TestApplyTitleNames_NoMatchLeavesEmpty(t *testing.T) {
+	index := map[string]string{}
+	products := []internal.Product{
+		{Title: "Unknown", LicenceCode: "UNK", TitleName: ""},
+	}
+
+	applyTitleNames(products, index)
+
+	if products[0].TitleName != "" {
+		t.Errorf("expected TitleName to remain empty, got %q", products[0].TitleName)
+	}
+}
+
 // Given a product with a filled LicenceCode, When enriching with a match, Then LicenceCode is also filled
 func TestEnrichProducts_FillsLicenceCodeWhenEmpty(t *testing.T) {
 	index := map[string][]setInfo{
