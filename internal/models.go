@@ -111,7 +111,7 @@ type Product struct {
 	LicenceCode string `json:"LicenceCode"`
 	Image       string `json:"Image"`
 	SetCode     string `json:"SetCode"`
-	ProductType string `json:"productType"`
+	ProductType string `json:"ProductType"`
 	TitleName   string `json:"TitleName"`
 }
 
